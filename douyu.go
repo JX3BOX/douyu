@@ -13,7 +13,10 @@ import (
 	"time"
 )
 
+// TestAID 测试用
 var TestAID = ""
+
+// TestKey 测试用
 var TestKey = ""
 
 type Douyu struct {
@@ -24,7 +27,6 @@ type Douyu struct {
 }
 
 func (d Douyu) GetAuthString(uri string, values url.Values) string {
-	values.Set("aid", d.AID)
 	var keyArray []string
 	for key := range values {
 		if values.Get(key) == "" {
@@ -46,12 +48,12 @@ func (d Douyu) GetAuthString(uri string, values url.Values) string {
 }
 
 type responseForToken struct {
-	Code int             `json:"code"`
-	Msg  string          `json:"msg"`
-	Data tokenRespStruct `json:"data"`
+	Code int       `json:"code"`
+	Msg  string    `json:"msg"`
+	Data tokenData `json:"data"`
 }
 
-type tokenRespStruct struct {
+type tokenData struct {
 	Token  string `json:"token"`
 	Expire int64  `json:"expire"`
 }
@@ -67,10 +69,9 @@ func (d *Douyu) GetToken() (string, error) {
 	}
 	v := url.Values{}
 	v.Set("time", strconv.FormatInt(time.Now().Unix(), 10))
-
+	v.Set("aid", d.AID)
 	uri := "/api/thirdPart/token"
 	auth := d.GetAuthString(uri, v)
-	v.Set("aid", d.AID)
 	v.Set("auth", auth)
 
 	body, err := Get(uri, v)
@@ -88,6 +89,65 @@ func (d *Douyu) GetToken() (string, error) {
 	d.token = resp.Data.Token
 	d.tokenExpireDate = time.Now().Unix() + resp.Data.Expire - 10
 	return d.token, nil
+}
+
+// BatchGetRoomInfoParams 批量获取房间的参数
+type BatchGetRoomInfoParams struct {
+	RIds    []int `json:"rids"`
+	CIdType int   `json:"cid_type"`
+	CId     int   `json:"cid"`
+	Rw      int   `json:"rw"`
+	Rh      int   `json:"rh"`
+}
+
+// BatchGetRoomInfoData See https://open.douyu.com/source/api/25
+type BatchGetRoomInfoData struct {
+	RId        int    `json:"rid"`
+	RoomSrc    string `json:"room_src"`
+	RoomSrcMax string `json:"room_src_max"`
+	RommName   string `json:"room_name"`
+	HN         int    `json:"hn"`
+	NickName   string `json:"nickname"`
+	Avatar     string `json:"avatar"`
+	Cid1       int    `json:"cid1"`
+	CName1     string `json:"cname1"`
+	Cid2       int    `json:"cid2"`
+	CName2     string `json:"cname2"`
+	Cid3       int    `json:"cid3"`
+	CName3     string `json:"cname3"`
+	RoomNotice string `json:"room_notice"`
+	IsVertical int    `json:"is_vertical"`
+	ShowStatus int    `json:"show_status"`
+}
+
+type responseBatchGetRoomInfo struct {
+	Code int                    `json:"code"`
+	Msg  string                 `json:"msg"`
+	Data []BatchGetRoomInfoData `json:"data"`
+}
+
+// BatchGetRoomInfo 批量房间获取
+func (d *Douyu) BatchGetRoomInfo(params BatchGetRoomInfoParams) ([]BatchGetRoomInfoData, error) {
+	uri := "/api/thirdPart/batchGetRoomInfo"
+	v := url.Values{}
+	v.Set("aid", d.AID)
+	v.Set("time", strconv.FormatInt(time.Now().Unix(), 10))
+	v.Set("token", d.token)
+	auth := d.GetAuthString(uri, v)
+	v.Set("auth", auth)
+	body, err := Post(uri, v, params)
+	if err != nil {
+		return nil, err
+	}
+	var data responseBatchGetRoomInfo
+	err = json.Unmarshal(body, &data)
+	if err != nil {
+		return nil, err
+	}
+	if data.Code == 0 {
+		return data.Data, nil
+	}
+	return nil, fmt.Errorf("code:%d msg:%s", data.Code, data.Msg)
 }
 
 // New 初始化
