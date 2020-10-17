@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/url"
 	"sort"
 	"strconv"
@@ -41,7 +40,6 @@ func (d Douyu) GetAuthString(uri string, values url.Values) string {
 		keyValueArray = append(keyValueArray, key+"="+values.Get(key))
 	}
 	beSignStr := uri + "?" + strings.Join(keyValueArray, "&") + d.Key
-	log.Println(beSignStr)
 	hash := md5.Sum([]byte(beSignStr))
 	return hex.EncodeToString(hash[:])
 
@@ -78,7 +76,6 @@ func (d *Douyu) GetToken() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	log.Println(string(body))
 	var resp responseForToken
 	if err = json.Unmarshal(body, &resp); err != nil {
 		return "", err

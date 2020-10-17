@@ -21,7 +21,7 @@ func TestBatchGetRoomInfo(t *testing.T) {
 		t.Fatal(err)
 		return
 	}
-	list, err := dy.BatchGetRoomInfo(BatchGetRoomInfoParams{RIds: []int{8852876, 8889134}})
+	list, err := dy.BatchGetRoomInfo(BatchGetRoomInfoParams{RIds: []int{1889960}})
 	if err != nil {
 		log.Println(err)
 		t.Fatal(err)
