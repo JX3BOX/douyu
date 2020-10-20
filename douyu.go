@@ -129,7 +129,11 @@ func (d *Douyu) BatchGetRoomInfo(params BatchGetRoomInfoParams) ([]BatchGetRoomI
 	v := url.Values{}
 	v.Set("aid", d.AID)
 	v.Set("time", strconv.FormatInt(time.Now().Unix(), 10))
-	v.Set("token", d.token)
+	token, err := d.GetToken()
+	if err != nil {
+		return nil, err
+	}
+	v.Set("token", token)
 	auth := d.GetAuthString(uri, v)
 	v.Set("auth", auth)
 	body, err := Post(uri, v, params)
